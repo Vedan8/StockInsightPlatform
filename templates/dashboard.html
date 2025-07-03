@@ -1,0 +1,46 @@
+<!-- templates/dashboard.html -->
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+{% load tailwind_tags %}
+<h1 class="text-2xl font-bold mb-4">Stock Prediction</h1>
+
+<form id="predict-form" class="mb-6">
+  <input type="text" id="ticker" name="ticker" placeholder="Enter Ticker (e.g., TSLA)" class="border px-2 py-1">
+  <button type="submit" class="bg-blue-500 text-white px-4 py-1 ml-2">Predict</button>
+</form>
+
+<div id="result" class="mb-4"></div>
+
+<div id="charts" class="grid grid-cols-2 gap-4"></div>
+
+<h2 class="text-xl font-semibold mt-6 mb-2">Past Predictions</h2>
+<ul id="history" class="list-disc pl-6"></ul>
+
+<script>
+async function loadPastPredictions() {
+  const token = localStorage.getItem("access");
+  const res = await fetch("/api/v1/predictions/", {
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  });
+
+  const data = await res.json();
+  if (res.ok) {
+    const list = data.map(p => `
+      <li>
+        ${p.ticker} - ₹${p.predicted_price} - ${new Date(p.created_at).toLocaleString()}
+      </li>
+    `).join("");
+    document.getElementById("history").innerHTML = list;
+  } else {
+    document.getElementById("history").innerHTML = "<li>Error loading history</li>";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  loadPastPredictions();
+});
+</script>
+{% endblock %}

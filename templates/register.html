@@ -1,0 +1,48 @@
+<!-- templates/register.html -->
+{% load tailwind_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Register</title>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+  <div class="bg-white p-8 rounded shadow-md w-96">
+    <h1 class="text-xl font-bold mb-4">Register</h1>
+    <form id="register-form">
+      <input type="text" id="username" placeholder="Username" class="border p-2 mb-2 w-full" required>
+      <input type="password" id="password" placeholder="Password" class="border p-2 mb-4 w-full" required>
+      <button type="submit" class="bg-green-500 text-white px-4 py-2 w-full">Register</button>
+    </form>
+    <div id="error" class="text-red-500 mt-2 hidden"></div>
+    <div id="success" class="text-green-600 mt-2 hidden"></div>
+  </div>
+
+  <script>
+    document.getElementById("register-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      const res = await fetch("/api/v1/register/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        document.getElementById("success").innerText = "Registration successful. Redirecting to login...";
+        document.getElementById("success").classList.remove("hidden");
+        setTimeout(() => {
+          window.location.href = "/login/";
+        }, 2000);
+      } else {
+        document.getElementById("error").innerText = data.username || data.password || "Registration failed.";
+        document.getElementById("error").classList.remove("hidden");
+      }
+    });
+  </script>
+</body>
+</html>

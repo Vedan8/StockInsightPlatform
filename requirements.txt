@@ -1,5 +1,28 @@
-django
+# Django core
+Django>=4.2
 djangorestframework
 djangorestframework-simplejwt
 django-environ
+django-tailwind
+
+# ML & Prediction
+tensorflow
+scikit-learn
+yfinance
+pandas
+numpy
+matplotlib
+keras
+
+# Production server
 gunicorn
+whitenoise
+
+# Telegram bot
+python-telegram-bot==22.1
+
+# Stripe billing (optional, for Pro features)
+stripe
+
+# Other utilities
+python-decouple

@@ -1,15 +1,23 @@
-version: '3.9'
-
 services:
   api:
     build: .
-    ports:
-      - "8000:8000"
+    command: gunicorn stock_prediction_main.wsgi:application --bind 0.0.0.0:8000 --workers 3
     env_file:
       - .env
     volumes:
       - .:/code
+    ports:
+      - "8000:8000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/healthz/"]
       interval: 30s
+      timeout: 10s
       retries: 3
+
+  telegrambot:
+    build: .
+    command: python manage.py telegrambot
+    env_file:
+      - .env
+    depends_on:
+      - api
