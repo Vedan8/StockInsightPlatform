@@ -1,7 +1,7 @@
 services:
   api:
     build: .
-    command: gunicorn stock_prediction_main.wsgi:application --bind 0.0.0.0:8000 --workers 3
+    command: gunicorn core.wsgi:application --bind 0.0.0.0:8000
     env_file:
       - .env
     volumes:
