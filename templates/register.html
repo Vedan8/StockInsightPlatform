@@ -5,17 +5,47 @@
 <head>
   <meta charset="UTF-8">
   <title>Register</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mui/material@5.15.13/dist/material.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@mui/material@5.15.13/umd/material-ui.development.js"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f3f4f6;
+    }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      margin: auto;
+      margin-top: 10vh;
+      padding: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-  <div class="bg-white p-8 rounded shadow-md w-96">
-    <h1 class="text-xl font-bold mb-4">Register</h1>
+<body>
+  <div class="container">
+    <h1 style="font-size: 1.5rem; font-weight: 500; margin-bottom: 1.5rem;">Register</h1>
     <form id="register-form">
-      <input type="text" id="username" placeholder="Username" class="border p-2 mb-2 w-full" required>
-      <input type="password" id="password" placeholder="Password" class="border p-2 mb-4 w-full" required>
-      <button type="submit" class="bg-green-500 text-white px-4 py-2 w-full">Register</button>
+      <div class="mui-textfield mui-textfield--float-label" style="margin-bottom: 1.5rem;">
+        <input type="text" id="username" required>
+        <label>Username</label>
+      </div>
+      <div class="mui-textfield mui-textfield--float-label" style="margin-bottom: 1.5rem;">
+        <input type="password" id="password" required>
+        <label>Password</label>
+      </div>
+      <button type="submit" class="mui-btn mui-btn--raised mui-btn--primary" style="width: 100%;">Register</button>
     </form>
-    <div id="error" class="text-red-500 mt-2 hidden"></div>
-    <div id="success" class="text-green-600 mt-2 hidden"></div>
+
+    <button onclick="window.location.href='/login/'" class="mui-btn mui-btn--flat mui-btn--accent" style="margin-top: 1rem; width: 100%;">
+      Already have an account? Login
+    </button>
+
+    <div id="error" class="mui--text-danger" style="margin-top: 1rem; display: none;"></div>
+    <div id="success" class="mui--text-success" style="margin-top: 1rem; display: none;"></div>
   </div>
 
   <script>
@@ -31,16 +61,18 @@
       });
 
       const data = await res.json();
+      const errorDiv = document.getElementById("error");
+      const successDiv = document.getElementById("success");
 
       if (res.ok) {
-        document.getElementById("success").innerText = "Registration successful. Redirecting to login...";
-        document.getElementById("success").classList.remove("hidden");
-        setTimeout(() => {
-          window.location.href = "/login/";
-        }, 2000);
+        successDiv.innerText = "Registration successful. Redirecting to login...";
+        successDiv.style.display = "block";
+        errorDiv.style.display = "none";
+        setTimeout(() => window.location.href = "/login/", 2000);
       } else {
-        document.getElementById("error").innerText = data.username || data.password || "Registration failed.";
-        document.getElementById("error").classList.remove("hidden");
+        errorDiv.innerText = data.username || data.password || "Registration failed.";
+        errorDiv.style.display = "block";
+        successDiv.style.display = "none";
       }
     });
   </script>

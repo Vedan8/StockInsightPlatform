@@ -7,8 +7,10 @@ from api.predictor import fetch_stock_data, generate_prediction, create_charts
 from asgiref.sync import sync_to_async
 from django.db.models import Max
 import httpx
-from django.contrib.auth import get_user_model
-User = get_user_model()
+from django.contrib.auth.models import User
+from django.conf import settings
+from datetime import datetime
+from django.utils.timezone import make_aware
 
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
@@ -24,11 +26,17 @@ class Command(BaseCommand):
         async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             chat_id = update.effective_chat.id
             username = update.effective_user.username 
-            print("-----------",username,"->",chat_id,"-----------")
-            user=await sync_to_async(User.objects.get_or_create)(username=username)
-            user=await sync_to_async(User.objects.get)(username=username)
-            await sync_to_async(TelegramUser.objects.get_or_create)(user=user.id,username=username,chat_id=chat_id)
-        
+            user, _ = await sync_to_async(User.objects.get_or_create)(username=username)
+            print("----",user.id,"----",user.username)
+            telegram_user, created = await sync_to_async(TelegramUser.objects.get_or_create)(
+                user=user,
+                username=username,
+                chat_id=chat_id
+            )
+            print("----",telegram_user.username,"----",telegram_user.chat_id)
+            if not created and telegram_user.username != username:
+                telegram_user.username = username
+                await sync_to_async(telegram_user.save)()
             msg = f"Hi @{username}! You've been registered."
             await update.message.reply_text(msg)        
 
@@ -39,18 +47,33 @@ class Command(BaseCommand):
 
             ticker = context.args[0].upper()
             chat_id = update.effective_chat.id
-            print("-----------",ticker,"->",chat_id,"-----------")
+            print("-----------", ticker, "->", chat_id, "-----------")
+
             try:
                 tg_user = await sync_to_async(TelegramUser.objects.get)(chat_id=chat_id)
-                user = tg_user.user
+                user = await sync_to_async(lambda: tg_user.user)()
             except TelegramUser.DoesNotExist:
                 await update.message.reply_text("Use /start to link your account.")
                 return
 
+            print("----", tg_user.username, "---", ticker)
+
             try:
+                # Get start of today in aware datetime
+                today_start = make_aware(datetime.now().replace(hour=0, minute=0, second=0, microsecond=0))
+
+                # Count predictions made today by this user
+                prediction_count_today = await sync_to_async(Prediction.objects.filter(
+                    user=user, created_at__gte=today_start
+                ).count)()
+
+                if not tg_user.is_paid and prediction_count_today >= 5:
+                    await update.message.reply_text("Daily limit reached (5 predictions/day). Upgrade to premium for unlimited predictions.")
+                    return
+
                 df = fetch_stock_data(ticker)
                 next_price, scaler = generate_prediction(df)
-                chart1, chart2 = create_charts(df, next_price, scaler)
+                chart1, chart2 = create_charts(df, next_price, scaler,ticker=ticker)
 
                 await sync_to_async(Prediction.objects.create)(
                     user=user,
@@ -62,8 +85,14 @@ class Command(BaseCommand):
                 )
 
                 await update.message.reply_text(f"Prediction for {ticker}: ₹{round(next_price, 2)}")
-                await context.bot.send_photo(chat_id=chat_id, photo=open(f"static/{chart1}", "rb"))
-                await context.bot.send_photo(chat_id=chat_id, photo=open(f"static/{chart2}", "rb"))
+
+                chart1_path = os.path.join(settings.BASE_DIR, chart1)
+                chart2_path = os.path.join(settings.BASE_DIR, chart2)
+
+                with open(chart1_path, "rb") as f1:
+                    await context.bot.send_photo(chat_id=chat_id, photo=f1)
+                with open(chart2_path, "rb") as f2:
+                    await context.bot.send_photo(chat_id=chat_id, photo=f2)
 
             except Exception as e:
                 await update.message.reply_text(f"Error: {str(e)}")
@@ -73,7 +102,7 @@ class Command(BaseCommand):
 
             try:
                 tg_user = await sync_to_async(TelegramUser.objects.get)(chat_id=chat_id)
-                user = tg_user.user
+                user = await sync_to_async(lambda: tg_user.user)()
 
                 # Get latest prediction safely
                 max_time = await sync_to_async(Prediction.objects.filter(user=user).aggregate)(Max("created_at"))
@@ -82,10 +111,8 @@ class Command(BaseCommand):
                 )
 
                 await update.message.reply_text(
-                    f"Latest: {latest_pred.ticker} → ₹{latest_pred.predicted_price} at {latest_pred.created_at}"
+                    f"Latest: {latest_pred.ticker} → ${latest_pred.predicted_price} at {latest_pred.created_at}"
                 )
-                await context.bot.send_photo(chat_id=chat_id, photo=open(f"static/{latest_pred.chart1_path}", "rb"))
-                await context.bot.send_photo(chat_id=chat_id, photo=open(f"static/{latest_pred.chart2_path}", "rb"))
 
             except TelegramUser.DoesNotExist:
                 await update.message.reply_text("Use /start to link your account.")

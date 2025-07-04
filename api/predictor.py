@@ -1,13 +1,10 @@
 import os
 import yfinance as yf
 import numpy as np
-import pandas as pd
 from datetime import datetime
 from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
-import io
-import base64
 
 MODEL_PATH = os.getenv("MODEL_PATH", "stock_prediction_model.keras")
 
@@ -39,18 +36,21 @@ def generate_prediction(df):
 
     return pred[0][0], scaler
 
-def create_charts(df, prediction, scaler):
+def create_charts(df, prediction, scaler, ticker=None):
+    date_str = datetime.now().strftime("%Y-%m-%d")  # Only date
+    ticker_str = ticker.upper() if ticker else "UNKNOWN"
+
     # 1. Closing Price History
     plt.figure()
     df["Close"].plot(title="Closing Price History")
     plt.xlabel("Date")
     plt.ylabel("Price")
     plt.tight_layout()
-    path1 = f"staticfiles/charts/{df.index[-1].date()}_history.png"
+    path1 = f"staticfiles/charts/{ticker_str}_{date_str}_history.png"
     plt.savefig(path1)
     plt.close()
 
-    # 2. Actual vs Predicted — simulate one prediction
+    # 2. Actual vs Predicted
     plt.figure()
     actual = df["Close"].values[-60:]
     actual_scaled = scaler.transform(actual.reshape(-1, 1))
@@ -64,8 +64,9 @@ def create_charts(df, prediction, scaler):
     plt.legend()
     plt.title("Actual vs. Predicted")
     plt.tight_layout()
-    path2 = f"staticfiles/charts/{df.index[-1].date()}_predicted.png"
+    path2 = f"staticfiles/charts/{ticker_str}_{date_str}_predicted.png"
     plt.savefig(path2)
     plt.close()
 
     return path1, path2
+

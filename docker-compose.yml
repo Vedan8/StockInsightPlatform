@@ -19,5 +19,7 @@ services:
     command: python manage.py telegrambot
     env_file:
       - .env
+    volumes:
+      - .:/code
     depends_on:
       - api

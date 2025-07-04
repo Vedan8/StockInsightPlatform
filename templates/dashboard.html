@@ -1,46 +1,138 @@
 <!-- templates/dashboard.html -->
 {% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
-{% block content %}
 {% load tailwind_tags %}
-<h1 class="text-2xl font-bold mb-4">Stock Prediction</h1>
+{% block title %}Dashboard{% endblock %}
 
-<form id="predict-form" class="mb-6">
-  <input type="text" id="ticker" name="ticker" placeholder="Enter Ticker (e.g., TSLA)" class="border px-2 py-1">
-  <button type="submit" class="bg-blue-500 text-white px-4 py-1 ml-2">Predict</button>
-</form>
-
-<div id="result" class="mb-4"></div>
-
-<div id="charts" class="grid grid-cols-2 gap-4"></div>
-
-<h2 class="text-xl font-semibold mt-6 mb-2">Past Predictions</h2>
-<ul id="history" class="list-disc pl-6"></ul>
-
-<script>
-async function loadPastPredictions() {
-  const token = localStorage.getItem("access");
-  const res = await fetch("/api/v1/predictions/", {
-    headers: {
-      "Authorization": "Bearer " + token
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/@mui/material@5.15.13/dist/material.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@mui/material@5.15.13/umd/material-ui.development.js"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f3f4f6;
     }
-  });
+    .container {
+      max-width: 800px;
+      margin: auto;
+      padding: 2rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      margin-top: 5vh;
+    }
+    .mui-btn {
+      width: 100%;
+      margin-top: 1rem;
+    }
+    #charts img {
+      border-radius: 8px;
+      max-width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="mui--text-headline">📈 Stock Prediction</h1>
 
-  const data = await res.json();
-  if (res.ok) {
-    const list = data.map(p => `
-      <li>
-        ${p.ticker} - ₹${p.predicted_price} - ${new Date(p.created_at).toLocaleString()}
-      </li>
-    `).join("");
-    document.getElementById("history").innerHTML = list;
-  } else {
-    document.getElementById("history").innerHTML = "<li>Error loading history</li>";
-  }
-}
+    <form id="predict-form" style="margin-top: 1.5rem;">
+      <div class="mui-textfield mui-textfield--float-label">
+        <input type="text" id="ticker" placeholder="e.g., TSLA" required>
+        <label>Ticker Symbol</label>
+      </div>
+      <button type="submit" class="mui-btn mui-btn--raised mui-btn--primary">Predict</button>
+    </form>
 
-document.addEventListener("DOMContentLoaded", function () {
-  loadPastPredictions();
-});
-</script>
+    <div id="result" class="mui--text-subhead" style="margin-top: 1.5rem;"></div>
+    <div id="charts" class="grid grid-cols-2 gap-4" style="margin-top: 1rem;"></div>
+
+    <h2 class="mui--text-title" style="margin-top: 2rem;">📜 Past Predictions</h2>
+    <ul id="history" class="mui--text-body1" style="margin-left: 1rem;"></ul>
+  </div>
+
+  <script>
+    async function loadPastPredictions() {
+      const token = localStorage.getItem("access");
+      if (!token) {
+        window.location.href = "/login/";
+        return;
+      }
+
+      const res = await fetch("/api/v1/predictions/", {
+        headers: { "Authorization": "Bearer " + token }
+      });
+
+      if (res.status === 401) {
+        window.location.href = "/login/";
+        return;
+      }
+
+      const data = await res.json();
+      const history = document.getElementById("history");
+
+      if (res.ok) {
+        const list = data.map(p => `
+          <li>${p.ticker} - ₹${p.predicted_price} - ${new Date(p.created_at).toLocaleString()}</li>
+        `).join("");
+        history.innerHTML = list;
+      } else {
+        history.innerHTML = "<li>Error loading history</li>";
+      }
+    }
+
+    document.getElementById("predict-form").addEventListener("submit", async function (e) {
+      e.preventDefault();
+      const ticker = document.getElementById("ticker").value.trim();
+      const token = localStorage.getItem("access");
+      const resultDiv = document.getElementById("result");
+      const chartsDiv = document.getElementById("charts");
+
+      if (!token) {
+        window.location.href = "/login/";
+        return;
+      }
+
+      const res = await fetch("/api/v1/predict/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify({ ticker })
+      });
+
+      const data = await res.json();
+
+      if (res.status === 401) {
+        window.location.href = "/login/";
+        return;
+      }
+
+      if (res.status === 403 && data.error?.includes("Free tier daily limit")) {
+        resultDiv.innerText = data.error;
+        chartsDiv.innerHTML = "";
+        return;
+      }
+
+      if (res.ok) {
+        resultDiv.innerText = `Prediction for ${data.ticker}: ₹${data.next_day_price}`;
+        chartsDiv.innerHTML = `
+          <img src="/${data.plot_urls[0]}" alt="Chart 1" />
+          <img src="/${data.plot_urls[1]}" alt="Chart 2" />
+        `;
+        loadPastPredictions();
+      } else {
+        resultDiv.innerText = "Error: " + (data.error || "Something went wrong.");
+        chartsDiv.innerHTML = "";
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", loadPastPredictions);
+  </script>
+</body>
+</html>
 {% endblock %}
