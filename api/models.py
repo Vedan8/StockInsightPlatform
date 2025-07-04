@@ -6,7 +6,7 @@ class Prediction(models.Model):
     ticker = models.CharField(max_length=10)
     predicted_price = models.FloatField()
     created_at = models.DateTimeField(auto_now_add=True)
-    metrics = models.JSONField(default=dict)  # optional: mse, rmse, r2
+    metrics = models.JSONField(default=dict)  
     chart1_path = models.CharField(max_length=255)
     chart2_path = models.CharField(max_length=255)
 

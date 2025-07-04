@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 import environ
 import os
 
+STRIPE_SECRET_KEY= os.getenv("STRIPE_SECRET_KEY")
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 env = environ.Env()
 env_path = os.path.join(BASE_DIR, '.env')
@@ -19,6 +20,7 @@ environ.Env.read_env(env_path)
 
 SECRET_KEY = env('SECRET_KEY')
 DEBUG = env('DEBUG')
+BOT_USERNAME=env('BOT_USERNAME')
 ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS')
 
 
@@ -125,7 +127,7 @@ LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kolkata'
 USE_TZ = True 
 
-
+SITE_URL="http://127.0.0.1:8000"
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
@@ -146,3 +148,5 @@ REST_FRAMEWORK = {
 
 TAILWIND_APP_NAME = 'theme'  # change to match your app name
 INTERNAL_IPS = ['127.0.0.1']
+
+LOGIN_REDIRECT_URL = "/"

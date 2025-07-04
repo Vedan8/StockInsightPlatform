@@ -11,7 +11,8 @@ from django.contrib.auth.models import User
 from django.conf import settings
 from datetime import datetime
 from django.utils.timezone import make_aware
-
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
 
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 
@@ -118,10 +119,23 @@ class Command(BaseCommand):
                 await update.message.reply_text("Use /start to link your account.")
             except Prediction.DoesNotExist:
                 await update.message.reply_text("No predictions yet.")
+        
+        async def upgrade(update: Update, context: ContextTypes.DEFAULT_TYPE):
+            chat_id = update.effective_chat.id
+            try:
+                tg_user = await sync_to_async(TelegramUser.objects.get)(chat_id=chat_id)
+                user = await sync_to_async(lambda: tg_user.user)()
+                uid = urlsafe_base64_encode(force_bytes(user.id))
+                url = f"{settings.SITE_URL}/telegram-checkout/{uid}/"
+                await update.message.reply_text(f"🚀 Upgrade to premium: {url}")
+            except TelegramUser.DoesNotExist:
+                await update.message.reply_text("Use /start to register first.")
 
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CommandHandler("predict", predict))
         application.add_handler(CommandHandler("latest", latest))
+        application.add_handler(CommandHandler("upgrade", upgrade))
+
 
         self.stdout.write("Telegram bot started")
         application.run_polling()

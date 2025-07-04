@@ -1,84 +1,64 @@
-<!-- templates/login.html -->
-{% load tailwind_tags %}
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Login</title>
   <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/@mui/material@5.15.13/dist/material.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@mui/material@5.15.13/umd/material-ui.development.js"></script>
   <style>
     body {
       font-family: 'Roboto', sans-serif;
       background-color: #f3f4f6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
     }
     .container {
-      width: 100%;
-      max-width: 400px;
-      margin: auto;
-      margin-top: 10vh;
-      padding: 2rem;
       background: white;
+      padding: 2rem;
       border-radius: 8px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+    }
+    input, button {
+      width: 100%;
+      padding: 0.75rem;
+      margin-top: 1rem;
+      font-size: 1rem;
+    }
+    .error {
+      color: red;
+      margin-top: 1rem;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 style="font-size: 1.5rem; font-weight: 500; margin-bottom: 1.5rem; text-align: center;">Login</h1>
-    <form id="login-form">
-      <div class="mui-textfield mui-textfield--float-label" style="margin-bottom: 1.5rem;">
-        <input type="text" id="username" required>
-        <label>Username</label>
-      </div>
-      <div class="mui-textfield mui-textfield--float-label" style="margin-bottom: 1.5rem;">
-        <input type="password" id="password" required>
-        <label>Password</label>
-      </div>
-      <button type="submit" class="mui-btn mui-btn--raised mui-btn--primary" style="width: 100%;">Login</button>
+    <h2 style="text-align:center;">Login</h2>
+    <form method="POST" action="{% url 'login' %}">
+      {% csrf_token %}
+      {% if form.errors %}
+        <div class="error">
+          Invalid credentials. Please try again.
+        </div>
+      {% endif %}
+
+      <label for="id_username">Username</label>
+      <input type="text" name="username" id="id_username" required>
+
+      <label for="id_password">Password</label>
+      <input type="password" name="password" id="id_password" required>
+
+      <button type="submit">Login</button>
     </form>
-    <div id="error" class="mui--text-danger" style="margin-top: 1rem; display: none;"></div>
-    <p class="mui--text-caption" style="margin-top: 1.5rem; text-align: center;">
+
+    <p style="text-align:center; margin-top:1.5rem;">
       Don't have an account?
-      <a href="/register/" class="mui--text-primary">Register</a>
+      <a href="/register/">Register</a>
     </p>
   </div>
-
-  <script>
-    document.getElementById("login-form").addEventListener("submit", async function (e) {
-      e.preventDefault();
-
-      const username = document.getElementById("username").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const errorBox = document.getElementById("error");
-
-      try {
-        const res = await fetch("/api/v1/token/", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ username, password })
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          localStorage.setItem("access", data.access);
-          localStorage.setItem("refresh", data.refresh);
-          window.location.href = "/";
-        } else {
-          errorBox.innerText = data.detail || "Login failed. Check credentials.";
-          errorBox.style.display = "block";
-        }
-      } catch (err) {
-        console.error("Login error:", err);
-        errorBox.innerText = "Something went wrong. Try again.";
-        errorBox.style.display = "block";
-      }
-    });
-  </script>
 </body>
 </html>
