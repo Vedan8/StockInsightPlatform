@@ -32,7 +32,7 @@ A full-stack micro-SaaS application for stock price predictions powered by Djang
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/Vedan8/stock-insight.git
+git clone https://github.com/Vedan8/StockInsightPlatform.git
 cd stock-insight
 ```
 
