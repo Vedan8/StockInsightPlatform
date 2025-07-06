@@ -85,7 +85,7 @@ class Command(BaseCommand):
                     chart2_path=chart2
                 )
 
-                await update.message.reply_text(f"Prediction for {ticker}: ₹{round(next_price, 2)}")
+                await update.message.reply_text(f"Prediction for {ticker}: ${round(next_price, 2)}")
 
                 chart1_path = os.path.join(settings.BASE_DIR, chart1)
                 chart2_path = os.path.join(settings.BASE_DIR, chart2)
