@@ -1,60 +1,181 @@
 {% extends "base.html" %}
-{% load tailwind_tags %}
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto mt-12 px-6 py-8 bg-gradient-to-br from-white via-blue-50 to-blue-100 rounded-xl shadow-lg">
-  <h1 class="text-3xl font-bold text-center text-blue-900 mb-8">📈 Stock Prediction</h1>
+
+<style>
+  .container {
+    max-width: 800px;
+    margin: 3rem auto;
+    padding: 2rem;
+    background: linear-gradient(to bottom right, #ffffff, #e0f2ff, #dbeafe);
+    border-radius: 1rem;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    font-family: sans-serif;
+  }
+
+  .heading {
+    font-size: 2rem;
+    font-weight: bold;
+    text-align: center;
+    color: #1e3a8a;
+    margin-bottom: 2rem;
+  }
+
+  .alert-error {
+    background-color: #fef2f2;
+    border-left: 4px solid #f87171;
+    color: #b91c1c;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 0.4rem;
+    color: #374151;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 0.5rem 1rem;
+    border: 1px solid #93c5fd;
+    border-radius: 0.375rem;
+    background-color: white;
+    transition: 0.2s ease;
+  }
+
+  input[type="text"]:focus {
+    border-color: #60a5fa;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.5);
+  }
+
+  .btn {
+    width: 100%;
+    padding: 0.7rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-primary {
+    background-color: #3b82f6;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #2563eb;
+  }
+
+  .btn-yellow {
+    background-color: #facc15;
+    color: #1f2937;
+  }
+
+  .btn-yellow:hover {
+    background-color: #fbbf24;
+  }
+
+  .alert-success {
+    margin-top: 1.5rem;
+    background-color: #ecfdf5;
+    border-left: 4px solid #34d399;
+    color: #065f46;
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+
+  .chart-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 2rem;
+  }
+
+.chart-img {
+  border-radius: 0.5rem;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+}
+
+  .past-section {
+    margin-top: 2.5rem;
+  }
+
+  .past-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e3a8a;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #cbd5e1;
+    margin-bottom: 1rem;
+  }
+
+  .past-list {
+    list-style: disc;
+    padding-left: 1.25rem;
+    color: #374151;
+  }
+
+  .past-list li {
+    margin-bottom: 0.5rem;
+  }
+</style>
+
+<div class="container">
+  <h1 class="heading">📈 Stock Prediction</h1>
 
   {% if error %}
-    <div class="bg-red-50 border-l-4 border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+    <div class="alert-error">
       {{ error }}
     </div>
   {% endif %}
 
-  <form id="predict-form" method="POST" class="space-y-6">
+  <form id="predict-form" method="POST">
     {% csrf_token %}
-    <div>
-      <label for="ticker" class="block text-sm font-medium text-gray-700 mb-1">Ticker Symbol</label>
-      <input
-        type="text"
-        name="ticker"
-        id="ticker"
-        placeholder="e.g., TSLA"
-        required
-        autocomplete="off"
-        class="w-full px-4 py-2 border border-blue-300 rounded-md bg-white focus:ring-2 focus:ring-blue-300 focus:border-blue-400 shadow-sm transition"
-      >
+    <div class="form-group">
+      <label for="ticker">Ticker Symbol</label>
+      <input type="text" name="ticker" id="ticker" placeholder="e.g., TSLA" required autocomplete="off">
     </div>
-    <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2.5 rounded-md shadow transition">
-      🔍 Predict
-    </button>
+    <button type="submit" class="btn btn-primary">🔍 Predict</button>
   </form>
 
   {% if not is_paid %}
   <form action="/create-checkout-session/" method="GET" class="mt-4">
-    <button class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold py-2.5 rounded-md shadow transition">
-      💎 Upgrade to Premium
-    </button>
+    <button class="btn btn-yellow mt-3">💎 Upgrade to Premium</button>
   </form>
   {% endif %}
 
   {% if prediction %}
-    <div class="mt-6 bg-green-50 border-l-4 border-green-400 text-green-800 px-4 py-3 rounded">
+    <div class="alert-success">
       ✅ Prediction for <strong>{{ prediction.ticker }}</strong>: ${{ prediction.predicted_price }}
     </div>
   {% endif %}
 
   {% if chart1_url and chart2_url %}
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-    <img src="/{{ chart1_url }}" alt="Chart 1" class="rounded-lg border border-blue-100 shadow-sm" />
-    <img src="/{{ chart2_url }}" alt="Chart 2" class="rounded-lg border border-blue-100 shadow-sm" />
+  <div class="chart-grid">
+    <img src="/{{ chart1_url }}" alt="Chart 1" class="chart-img" />
+    <img src="/{{ chart2_url }}" alt="Chart 2" class="chart-img" />
   </div>
   {% endif %}
 
-  <div class="mt-10">
-    <h2 class="text-2xl font-semibold text-blue-900 border-b pb-2 mb-4">📜 Past Predictions</h2>
-    <ul class="space-y-2 text-gray-800 list-disc list-inside">
+  <div class="past-section">
+    <h2 class="past-title">📜 Past Predictions</h2>
+    <ul class="past-list">
       {% for p in past_predictions %}
         <li>{{ p.ticker }} – ${{ p.predicted_price }} – {{ p.created_at|date:"d M Y, H:i" }}</li>
       {% empty %}
@@ -63,4 +184,5 @@
     </ul>
   </div>
 </div>
+
 {% endblock %}

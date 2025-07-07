@@ -37,36 +37,50 @@ def generate_prediction(df):
     return pred[0][0], scaler
 
 def create_charts(df, prediction, scaler, ticker=None):
-    date_str = datetime.now().strftime("%Y-%m-%d")  # Only date
+    from copy import deepcopy
+    date_str = datetime.now().strftime("%Y-%m-%d")
     ticker_str = ticker.upper() if ticker else "UNKNOWN"
 
     # 1. Closing Price History
-    plt.figure()
-    df["Close"].plot(title="Closing Price History")
+    plt.figure(figsize=(10, 6))
+    df["Close"].plot(title=f"{ticker_str} Closing Price History", grid=True)
     plt.xlabel("Date")
-    plt.ylabel("Price")
+    plt.ylabel("Price (USD)")
+    plt.xticks(rotation=45)
     plt.tight_layout()
     path1 = f"staticfiles/charts/{ticker_str}_{date_str}_history.png"
     plt.savefig(path1)
     plt.close()
 
-    # 2. Actual vs Predicted
-    plt.figure()
-    actual = df["Close"].values[-60:]
-    actual_scaled = scaler.transform(actual.reshape(-1, 1))
-    test_input = np.array(actual_scaled[-60:]).reshape(1, 60, 1)
-    model = load_lstm_model()
-    prediction_scaled = model.predict(test_input)
-    predicted = scaler.inverse_transform(prediction_scaled)
+    # 2. Actual vs Predicted over last 60 days
+    actual_prices = df["Close"].values[-120:]  # Need extra for sliding window
+    actual_scaled = scaler.transform(actual_prices.reshape(-1, 1))
 
-    plt.plot(range(60), actual[-60:], label="Actual")
-    plt.plot([60], predicted[0], 'ro', label="Predicted")
+    model = load_lstm_model()
+    predicted_prices = []
+
+    # Use sliding window to predict each day in the last 60 days
+    for i in range(60):
+        input_seq = actual_scaled[i:i+60].reshape(1, 60, 1)
+        pred_scaled = model.predict(input_seq, verbose=0)
+        pred = scaler.inverse_transform(pred_scaled)[0][0]
+        predicted_prices.append(pred)
+
+    # Actual for last 60 days
+    actual_last_60 = actual_prices[-60:]
+
+    # Plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(60), actual_last_60, label="Actual", color="blue")
+    plt.plot(range(60), predicted_prices, label="Predicted", color="orange")
+    plt.title(f"{ticker_str} - Last 60 Days: Actual vs Predicted", fontsize=14)
+    plt.xlabel("Day (0 = 60 days ago)", fontsize=12)
+    plt.ylabel("Price (USD)", fontsize=12)
     plt.legend()
-    plt.title("Actual vs. Predicted")
+    plt.grid(True, linestyle='--', alpha=0.5)
     plt.tight_layout()
     path2 = f"staticfiles/charts/{ticker_str}_{date_str}_predicted.png"
     plt.savefig(path2)
     plt.close()
 
     return path1, path2
-
