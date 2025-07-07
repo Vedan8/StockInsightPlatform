@@ -14,10 +14,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # ✅ Step 3: copy remaining project files
 
 COPY . /code/
-RUN python manage.py tailwind install
 
-# Build Tailwind CSS
-RUN python manage.py tailwind build
 
 RUN python manage.py collectstatic --noinput
 # ✅ Step 4: run server
