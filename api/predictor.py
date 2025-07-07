@@ -2,7 +2,6 @@ import os
 import yfinance as yf
 import numpy as np
 from datetime import datetime
-from keras.models import load_model
 from sklearn.preprocessing import MinMaxScaler
 import matplotlib.pyplot as plt
 
@@ -17,6 +16,8 @@ def fetch_stock_data(ticker):
     return df[["Close", "Open", "High", "Low", "Volume"]]
 
 def load_lstm_model():
+    # Lazy-load the heavy Keras/TensorFlow modules only when needed.
+    from keras.models import load_model
     if not os.path.exists(MODEL_PATH):
         raise FileNotFoundError("Model file not found: " + MODEL_PATH)
     return load_model(MODEL_PATH)
@@ -33,15 +34,13 @@ def generate_prediction(df):
     model = load_lstm_model()
     pred_scaled = model.predict(X_input)
     pred = scaler.inverse_transform(pred_scaled)
-
     return pred[0][0], scaler
 
 def create_charts(df, prediction, scaler, ticker=None):
-    from copy import deepcopy
     date_str = datetime.now().strftime("%Y-%m-%d")
     ticker_str = ticker.upper() if ticker else "UNKNOWN"
 
-    # 1. Closing Price History
+    # Chart 1: Closing Price History
     plt.figure(figsize=(10, 6))
     df["Close"].plot(title=f"{ticker_str} Closing Price History", grid=True)
     plt.xlabel("Date")
@@ -52,24 +51,23 @@ def create_charts(df, prediction, scaler, ticker=None):
     plt.savefig(path1)
     plt.close()
 
-    # 2. Actual vs Predicted over last 60 days
-    actual_prices = df["Close"].values[-120:]  # Need extra for sliding window
+    # Chart 2: Actual vs Predicted (Last 60 Days)
+    actual_prices = df["Close"].values[-120:]  # Extra data for the sliding window.
     actual_scaled = scaler.transform(actual_prices.reshape(-1, 1))
 
+    # Load the model just once for all predictions.
     model = load_lstm_model()
     predicted_prices = []
 
-    # Use sliding window to predict each day in the last 60 days
+    # Use a sliding window to predict a value for each day in the last 60 days.
     for i in range(60):
         input_seq = actual_scaled[i:i+60].reshape(1, 60, 1)
         pred_scaled = model.predict(input_seq, verbose=0)
         pred = scaler.inverse_transform(pred_scaled)[0][0]
         predicted_prices.append(pred)
 
-    # Actual for last 60 days
     actual_last_60 = actual_prices[-60:]
 
-    # Plot
     plt.figure(figsize=(10, 6))
     plt.plot(range(60), actual_last_60, label="Actual", color="blue")
     plt.plot(range(60), predicted_prices, label="Predicted", color="orange")
