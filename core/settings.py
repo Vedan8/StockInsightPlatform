@@ -54,8 +54,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'api',
-    "tailwind",
-    "theme"
 ]
 
 MIDDLEWARE = [
@@ -146,7 +144,5 @@ REST_FRAMEWORK = {
     ),
 }
 
-TAILWIND_APP_NAME = 'theme'  # change to match your app name
-INTERNAL_IPS = ['127.0.0.1']
 
 LOGIN_REDIRECT_URL = "/"
